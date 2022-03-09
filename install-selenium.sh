@@ -39,7 +39,7 @@ mkdir -p "chromedriver/stable"
 unzip -q "chromedriver_linux64.zip" -d "chromedriver/stable"
 chmod +x "chromedriver/stable/chromedriver"
 
-echo "Install Selenium..."
-python3 -m pip install selenium
+# echo "Install Selenium..."
+# python3 -m pip install selenium
 
 popd
