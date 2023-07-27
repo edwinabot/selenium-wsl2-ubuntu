@@ -1,45 +1,33 @@
 #!/usr/bin/bash
+chrome_for_testing_endpoint="https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json"
+versions_file_path="/tmp/last-known-good-versions-with-downloads.json"
+cft_download_path=/tmp/chromefortesting.zip
+chromedriver_download_path=/tmp/chromedriver.zip
 
 echo "Changing to home directory..."
 pushd "$HOME"
 
-echo "Update the repository and any packages..."
-sudo apt update && sudo apt upgrade -y
+echo "Update the repository..."
+sudo apt update
 
 echo "Install prerequisite packages..."
-sudo apt install wget curl unzip -y
+sudo apt install wget unzip jq -y
 
-echo "Download the latest Chrome .deb file..."
-wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+echo "Get the latest known good version..."
+wget $chrome_for_testing_endpoint -O $versions_file_path
 
-echo "Install Google Chrome..."
-sudo dpkg -i google-chrome-stable_current_amd64.deb
+chrome_version=$(cat $versions_file_path | jq .channels.Stable.version)
+echo "Chrome version: ${chrome_version}"
 
-echo "Fix dependencies..."
-sudo apt --fix-broken install -y
+echo "Downloading Chrome For Testing..."
+wget $(cat $versions_file_path | jq -r .channels.Stable.downloads.chrome[0].url) -O $cft_download_path
 
-chrome_version=($(google-chrome-stable --version))
-echo "Chrome version: ${chrome_version[2]}"
+echo "Downloading Chromedriver..."
+wget $(cat $versions_file_path | jq -r .channels.Stable.downloads.chromedriver[0].url) -O $chromedriver_download_path
 
-chromedriver_version=$(curl "https://chromedriver.storage.googleapis.com/LATEST_RELEASE")
-echo "Chromedriver version: ${chromedriver_version}"
-if [ "${chrome_version[2]}" == "$chromedriver_version" ]; then
-    echo "Compatible Chromedriver is available..."
-    echo "Proceeding with installation..."
-else
-    echo "Compabible Chromedriver not available...exiting"
-    exit 1
-fi
-
-echo "Downloading latest Chromedriver..."
-curl -Lo chromedriver_linux64.zip "https://chromedriver.storage.googleapis.com/${chromedriver_version}/chromedriver_linux64.zip"
-
-echo "Unzip the binary file and make it executable..."
-mkdir -p "chromedriver/stable"
-unzip -q "chromedriver_linux64.zip" -d "chromedriver/stable"
-chmod +x "chromedriver/stable/chromedriver"
-
-# echo "Install Selenium..."
-# python3 -m pip install selenium
+echo "Unziping..."
+mkdir -p "chromefortesting"
+unzip -q $cft_download_path -d "chromefortesting"
+unzip -q $chromedriver_download_path -d "chromefortesting"
 
 popd
